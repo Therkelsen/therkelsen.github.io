@@ -39,23 +39,29 @@
 <script src="config.js"></script>
     <script>
         const languageColors = {
+            'ASP.NET': '#9400ff',
+            'AutoHotkey': '#6594b9',
+            'CSS': '#563d7c',
+            'C++': '#f34b7d',
+            'HTML': '#e34c26',
+            'Java': '#b07219',
+            'Jupyter Notebook': '#DA5B0B',
             'MATLAB': '#e16737',
             'PowerShell': '#012456',
-            'C++': '#f34b7d',
-            'Shell': '#89e051',
-            'ASP.NET': '#9400ff',
-            'Jupyter Notebook': '#DA5B0B',
-            'ZenScript': '#00BCD1',
-            'AutoHotkey': '#6594b9',
-            'Python': '#3572A5',
-            'Java': '#b07219',
             'Processing': '#0096D8',
+            'Python': '#3572A5',
+            'Shell': '#89e051',
+            'TypeScript': '#2b7489',
+            'ZenScript': '#00BCD1',
         };
 
         async function fetchGitHubRepos() {
             const username = 'Therkelsen'; // Replace with your GitHub username
-            const url = `https://api.github.com/users/${username}/repos`;
-
+            const reposPerPage = 100; // Max repositories per page
+            let page = 1; // Start at page 1
+            let allRepos = []; // Array to store all repositories
+            const url = `https://api.github.com/users/${username}/repos?per_page=${reposPerPage}&page=`;
+        
             // Array of repo names to exclude
             const excludedRepos = [
                 'Arduino',
@@ -73,47 +79,44 @@
                 'MPSoC4Drones',
                 'Processing',
                 'Python',
+                'SQL',
+                'Teknikfag-Arduino',
             ];
-
+        
             const loadingElement = document.getElementById('loading');
             const errorElement = document.getElementById('error');
             const projectsContainer = document.getElementById('projects');
-
+        
+            const timelineDotColor = '#007bff'; // Dot color for the timeline
+        
             loadingElement.style.display = 'block'; // Show loading message
             errorElement.style.display = 'none'; // Hide error message
             projectsContainer.innerHTML = ''; // Clear previous projects
-
+        
             try {
-                const response = await fetch(url);
-    
-                // Initialize the error message
-                let error = 'Network response was not ok';
-                
-                // Check if the response is not ok
-                if (!response.ok) {
-                    if (response.statusText === '') {
-                        error += '. No status.';
-                    } else {
-                        error += ': ' + response.statusText;
+                let response;
+                do {
+                    response = await fetch(url + page);
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok: ' + response.statusText);
                     }
-                    throw new Error(error + ' (status code: ' + response.status + ')');
-                }
-                
-                const repos = await response.json();
-    
-                // Sort repositories by creation date (newest first)
-                const timelineDotColor = '#007bff';
-                const sortedRepos = repos
+                    const repos = await response.json();
+                    allRepos = allRepos.concat(repos); // Combine repositories from each page
+                    page++;
+                } while (response.headers.get('Link') && response.headers.get('Link').includes('rel="next"')); // Check for more pages
+        
+                // Filter and sort repositories
+                const sortedRepos = allRepos
                     .filter(repo => !excludedRepos.includes(repo.name)) // Exclude specified repos
                     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Sort by created_at
-    
+        
                 sortedRepos.forEach(repo => {
                     const timelineItem = document.createElement('div');
                     timelineItem.className = 'timeline-item';
-                
+                    
                     // Determine the color based on the primary language
                     const languageColor = languageColors[repo.language] || '#000'; // Default color if not found
-                
+                    
                     timelineItem.innerHTML = `
                         <div class="timeline-dot" style="background-color: ${timelineDotColor};"></div>
                         <div class="timeline-content">
@@ -129,7 +132,7 @@
                     `;
                     projectsContainer.appendChild(timelineItem);
                 });
-                             
+        
             } catch (error) {
                 console.error('Error fetching GitHub repositories:', error);
                 errorElement.textContent = `Error fetching projects: ${error.message}`; // Show the error message
@@ -138,6 +141,7 @@
                 loadingElement.style.display = 'none'; // Hide loading message
             }
         }
+        
     
         // Call the function to fetch repos when the page loads
         window.onload = fetchGitHubRepos;

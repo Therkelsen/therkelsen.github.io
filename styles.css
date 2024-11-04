@@ -117,3 +117,7 @@ footer {
     font-weight: bold;
     text-align: center; /* Center the error message */
 }
+
+#projects {
+    margin-bottom: 50px; /* Adjust the value as needed for desired spacing */
+}
