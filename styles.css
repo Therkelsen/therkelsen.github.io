@@ -110,3 +110,10 @@ footer {
     color: #666;
     text-align: right;
 }
+
+#error {
+    color: red;
+    margin: 20px 0;
+    font-weight: bold;
+    text-align: center; /* Center the error message */
+}

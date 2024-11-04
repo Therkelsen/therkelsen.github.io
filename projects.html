@@ -36,88 +36,96 @@
 </body>
 </html>
 
-<script>
-    const languageColors = {
-        'MATLAB': '#e16737',
-        'PowerShell': '#012456',
-        'C++': '#f34b7d',
-        'Shell': '#89e051',
-        'ASP.NET': '#9400ff',
-        'Jupyter Notebook': '#DA5B0B',
-        'ZenScript': '#00BCD1',
-        'AutoHotkey': '#6594b9',
-        'Python': '#3572A5',
-        'Java': '#b07219',
-        'Processing': '#0096D8',
-    };
+<script src="config.js"></script>
+    <script>
+        const languageColors = {
+            'MATLAB': '#e16737',
+            'PowerShell': '#012456',
+            'C++': '#f34b7d',
+            'Shell': '#89e051',
+            'ASP.NET': '#9400ff',
+            'Jupyter Notebook': '#DA5B0B',
+            'ZenScript': '#00BCD1',
+            'AutoHotkey': '#6594b9',
+            'Python': '#3572A5',
+            'Java': '#b07219',
+            'Processing': '#0096D8',
+        };
 
-    async function fetchGitHubRepos() {
-        const username = 'Therkelsen'; // Replace with your GitHub username
-        const url = `https://api.github.com/users/${username}/repos`;
-        
-        // Array of repo names to exclude
-        const excludedRepos = [
-            'Arduino',
-            'CPP',
-            'Croptopia',
-            'emb_sys_vivado',
-            'EmbeddedSystems',
-            'Fika-Documentation',
-            'Fika-Plugin',
-            'Fika-Server',
-            'introduction_to_drone_technology',
-            'Java',
-            'Lua',
-            'MATLAB',
-            'MPSoC4Drones',
-            'Processing',
-            'Python',
-        ];
+        async function fetchGitHubRepos() {
+            const username = 'Therkelsen'; // Replace with your GitHub username
+            const url = `https://api.github.com/users/${username}/repos`;
 
-        const loadingElement = document.getElementById('loading');
-        const errorElement = document.getElementById('error');
-        const projectsContainer = document.getElementById('projects');
+            // Array of repo names to exclude
+            const excludedRepos = [
+                'Arduino',
+                'CPP',
+                'Croptopia',
+                'emb_sys_vivado',
+                'EmbeddedSystems',
+                'Fika-Documentation',
+                'Fika-Plugin',
+                'Fika-Server',
+                'introduction_to_drone_technology',
+                'Java',
+                'Lua',
+                'MATLAB',
+                'MPSoC4Drones',
+                'Processing',
+                'Python',
+            ];
 
-        loadingElement.style.display = 'block'; // Show loading message
-        errorElement.style.display = 'none'; // Hide error message
-        projectsContainer.innerHTML = ''; // Clear previous projects
+            const loadingElement = document.getElementById('loading');
+            const errorElement = document.getElementById('error');
+            const projectsContainer = document.getElementById('projects');
 
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('Network response was not ok');
-            const repos = await response.json();
+            loadingElement.style.display = 'block'; // Show loading message
+            errorElement.style.display = 'none'; // Hide error message
+            projectsContainer.innerHTML = ''; // Clear previous projects
 
-            // Sort repositories by creation date (newest first)
-            const sortedRepos = repos
-                .filter(repo => !excludedRepos.includes(repo.name)) // Exclude specified repos
-                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Sort by created_at
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `token ${GITHUB_TOKEN}` // Use the token from config.js
+                    }
+                });
+                if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
 
-            sortedRepos.forEach(repo => {
-                const timelineItem = document.createElement('div');
-                timelineItem.className = 'timeline-item';
+                const repos = await response.json();
+
+                // Sort repositories by creation date (newest first)
+                const sortedRepos = repos
+                    .filter(repo => !excludedRepos.includes(repo.name)) // Exclude specified repos
+                    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Sort by created_at
+
+                sortedRepos.forEach(repo => {
+                    const timelineItem = document.createElement('div');
+                    timelineItem.className = 'timeline-item';
                 
-                // Determine the color based on the primary language
-                const languageColor = languageColors[repo.language] || '#000'; // Default color if not found
-
-                timelineItem.innerHTML = `
-                    <div class="timeline-dot" style="background-color: ${languageColor};"></div>
-                    <div class="timeline-content">
-                        <h3>${repo.name}</h3>
-                        <p>${repo.description || 'No description available.'}</p>
-                        <a href="${repo.html_url}" target="_blank">View on GitHub</a>
-                        <span class="date">${new Date(repo.created_at).toLocaleDateString()}</span>
-                    </div>
-                `;
-                projectsContainer.appendChild(timelineItem);
-            });
-        } catch (error) {
-            console.error('Error fetching GitHub repositories:', error);
-            errorElement.style.display = 'block'; // Show error message
-        } finally {
-            loadingElement.style.display = 'none'; // Hide loading message
+                    // Determine the color based on the primary language
+                    const languageColor = languageColors[repo.language] || '#000'; // Default color if not found
+                
+                    timelineItem.innerHTML = `
+                        <div class="timeline-dot" style="background-color: ${languageColor};"></div>
+                        <div class="timeline-content">
+                            <h3>${repo.name}</h3>
+                            <p>${repo.description || 'No description available.'}</p>
+                            <a href="${repo.html_url}" target="_blank">View on GitHub</a>
+                            <span class="date">${new Date(repo.created_at).toLocaleDateString()}</span>
+                            <span class="language" style="color: ${languageColor};"><strong>${repo.language || 'Unknown Language'}</strong></span>
+                        </div>
+                    `;
+                    projectsContainer.appendChild(timelineItem);
+                });                    
+            } catch (error) {
+                console.error('Error fetching GitHub repositories:', error);
+                errorElement.textContent = `Error fetching projects: ${error.message}`; // Show the error message
+                errorElement.style.display = 'block'; // Show error message
+            } finally {
+                loadingElement.style.display = 'none'; // Hide loading message
+            }
         }
-    }
 
-    // Call the function to fetch repos when the page loads
-    window.onload = fetchGitHubRepos;
-</script>
+        // Call the function to fetch repos when the page loads
+        window.onload = fetchGitHubRepos;
+    </script>
