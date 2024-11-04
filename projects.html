@@ -23,7 +23,10 @@
 
     <div class="content">
         <h2>Projects</h2>
-        <p>Showcase your work here. You can add project descriptions, links to GitHub repositories, and images.</p>
+
+        <div id="loading" style="display: none;">Loading projects...</div>
+        <div id="error" style="display: none; color: red;">Error fetching projects. Please try again later.</div>
+        <div class="timeline" id="projects"></div>
     </div>
 
     <footer>
@@ -32,3 +35,89 @@
 
 </body>
 </html>
+
+<script>
+    const languageColors = {
+        'MATLAB': '#e16737',
+        'PowerShell': '#012456',
+        'C++': '#f34b7d',
+        'Shell': '#89e051',
+        'ASP.NET': '#9400ff',
+        'Jupyter Notebook': '#DA5B0B',
+        'ZenScript': '#00BCD1',
+        'AutoHotkey': '#6594b9',
+        'Python': '#3572A5',
+        'Java': '#b07219',
+        'Processing': '#0096D8',
+    };
+
+    async function fetchGitHubRepos() {
+        const username = 'Therkelsen'; // Replace with your GitHub username
+        const url = `https://api.github.com/users/${username}/repos`;
+        
+        // Array of repo names to exclude
+        const excludedRepos = [
+            'Arduino',
+            'CPP',
+            'Croptopia',
+            'emb_sys_vivado',
+            'EmbeddedSystems',
+            'Fika-Documentation',
+            'Fika-Plugin',
+            'Fika-Server',
+            'introduction_to_drone_technology',
+            'Java',
+            'Lua',
+            'MATLAB',
+            'MPSoC4Drones',
+            'Processing',
+            'Python',
+        ];
+
+        const loadingElement = document.getElementById('loading');
+        const errorElement = document.getElementById('error');
+        const projectsContainer = document.getElementById('projects');
+
+        loadingElement.style.display = 'block'; // Show loading message
+        errorElement.style.display = 'none'; // Hide error message
+        projectsContainer.innerHTML = ''; // Clear previous projects
+
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Network response was not ok');
+            const repos = await response.json();
+
+            // Sort repositories by creation date (newest first)
+            const sortedRepos = repos
+                .filter(repo => !excludedRepos.includes(repo.name)) // Exclude specified repos
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Sort by created_at
+
+            sortedRepos.forEach(repo => {
+                const timelineItem = document.createElement('div');
+                timelineItem.className = 'timeline-item';
+                
+                // Determine the color based on the primary language
+                const languageColor = languageColors[repo.language] || '#000'; // Default color if not found
+
+                timelineItem.innerHTML = `
+                    <div class="timeline-dot" style="background-color: ${languageColor};"></div>
+                    <div class="timeline-content">
+                        <h3>${repo.name}</h3>
+                        <p>${repo.description || 'No description available.'}</p>
+                        <a href="${repo.html_url}" target="_blank">View on GitHub</a>
+                        <span class="date">${new Date(repo.created_at).toLocaleDateString()}</span>
+                    </div>
+                `;
+                projectsContainer.appendChild(timelineItem);
+            });
+        } catch (error) {
+            console.error('Error fetching GitHub repositories:', error);
+            errorElement.style.display = 'block'; // Show error message
+        } finally {
+            loadingElement.style.display = 'none'; // Hide loading message
+        }
+    }
+
+    // Call the function to fetch repos when the page loads
+    window.onload = fetchGitHubRepos;
+</script>
