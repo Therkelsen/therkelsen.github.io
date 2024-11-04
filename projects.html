@@ -84,44 +84,52 @@
             projectsContainer.innerHTML = ''; // Clear previous projects
 
             try {
-                const response = await fetch(url, {
-                    headers: {
-                        'Authorization': `token ${GITHUB_TOKEN}` // Use the token from config.js
+                const response = await fetch(url);
+    
+                // Initialize the error message
+                let error = 'Network response was not ok';
+                
+                // Check if the response is not ok
+                if (!response.ok) {
+                    if (response.statusText === '') {
+                        error += '. No status.';
+                    } else {
+                        error += ': ' + response.statusText;
                     }
-                });
-                if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
-
+                    throw new Error(error + ' (status code: ' + response.status + ')');
+                }
+                
                 const repos = await response.json();
-
+    
                 // Sort repositories by creation date (newest first)
                 const timelineDotColor = '#007bff';
                 const sortedRepos = repos
                     .filter(repo => !excludedRepos.includes(repo.name)) // Exclude specified repos
                     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Sort by created_at
-
-                    sortedRepos.forEach(repo => {
-                        const timelineItem = document.createElement('div');
-                        timelineItem.className = 'timeline-item';
-                    
-                        // Determine the color based on the primary language
-                        const languageColor = languageColors[repo.language] || '#000'; // Default color if not found
-                    
-                        timelineItem.innerHTML = `
-                            <div class="timeline-dot" style="background-color: ${timelineDotColor};"></div>
-                            <div class="timeline-content">
-                                <h3>${repo.name}</h3>
-                                <p>${repo.description || 'No description available.'}</p>
-                                <a href="${repo.html_url}" target="_blank">View on GitHub</a>
-                                <span class="date">${new Date(repo.created_at).toLocaleDateString()}</span>
-                                <span class="language" style="color: #000;">
-                                    <span class="language-dot" style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background-color: ${languageColor}; margin-right: 5px;"></span>
-                                    <strong>${repo.language || 'Unknown Language'}</strong>
-                                </span>
-                            </div>
-                        `;
-                        projectsContainer.appendChild(timelineItem);
-                    });
-                                   
+    
+                sortedRepos.forEach(repo => {
+                    const timelineItem = document.createElement('div');
+                    timelineItem.className = 'timeline-item';
+                
+                    // Determine the color based on the primary language
+                    const languageColor = languageColors[repo.language] || '#000'; // Default color if not found
+                
+                    timelineItem.innerHTML = `
+                        <div class="timeline-dot" style="background-color: ${timelineDotColor};"></div>
+                        <div class="timeline-content">
+                            <h3>${repo.name}</h3>
+                            <p>${repo.description || 'No description available.'}</p>
+                            <a href="${repo.html_url}" target="_blank">View on GitHub</a>
+                            <span class="date">${new Date(repo.created_at).toLocaleDateString()}</span>
+                            <span class="language" style="color: #000;">
+                                <span class="language-dot" style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background-color: ${languageColor}; margin-right: 5px;"></span>
+                                <strong>${repo.language || 'Unknown Language'}</strong>
+                            </span>
+                        </div>
+                    `;
+                    projectsContainer.appendChild(timelineItem);
+                });
+                             
             } catch (error) {
                 console.error('Error fetching GitHub repositories:', error);
                 errorElement.textContent = `Error fetching projects: ${error.message}`; // Show the error message
@@ -130,7 +138,7 @@
                 loadingElement.style.display = 'none'; // Hide loading message
             }
         }
-
+    
         // Call the function to fetch repos when the page loads
         window.onload = fetchGitHubRepos;
     </script>
